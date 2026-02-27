@@ -103,7 +103,7 @@ The lower (rising case) or upper (falling case) layer becomes the initial moving
 As the plug encounters an adjacent layer of height (dh_r), an entrained volume:
 
 $$
-\Delta V_e = f_e,dh_r
+\Delta V_e = f_e \cdot dh_r
 $$
 
 is mixed into the plug.
@@ -114,16 +114,15 @@ is mixed into the plug.
 
 Impulse is updated using a work–energy balance:
 
-[
 
 $$
-I_{new}^2 = I_{old}^2 \Bigl(1 - 2\ln\frac{m_{new}}{m_{old}}\Bigr)-2g\frac{\Delta \rho}{\rho}
+I_{new}^2 = I_{old}^2 \Bigl(1 - 2\ln\frac{m_{new}}{m_{old}}\Bigr)-2g\cdot\frac{\Delta \rho}{\rho} \cdot
 dh_r
 $$
 
 Where:
 
-* the logarithmic term represents dilution by entrainment ,
+* the logarithmic term represents dilution by entrainment
 * the buoyancy term represents conversion between potential and kinetic energy .
 
 ---
