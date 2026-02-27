@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+
+datei/
+src/datei/
+src/test_compare_original_vs_freettes.py

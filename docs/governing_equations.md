@@ -1,0 +1,284 @@
+# FreeTTES // Governing Equations
+
+This document provides a **formal, engineering-grade mathematical formulation**
+of the FreeTTES model. It is written to be suitable for **engineering documentation, theses, and journal appendices**.The formulation reflects the **executable logic of the code**, not idealized textbook CFD.
+
+---
+
+## 1. Control Volume Definition
+
+The tank is discretized into horizontal control volumes (layers) indexed by *i*.
+
+For each layer:
+
+- **Height:**
+
+$$
+\Delta h_i \; [\mathrm{m}]
+$$
+
+- **Volume:**
+
+$$
+V_i = A\,\Delta h_i
+$$
+
+- **Mass:**
+
+$$
+m_i = \rho(T_i)\,V_i
+$$
+
+where $A$ is the tank cross-sectional area.
+
+---
+
+## 2. State Variables
+
+Each layer is described by the state vector:
+
+$$
+\mathbf{s}_i =
+\bigl(
+T_i,\;
+\Delta h_i,\;
+I_i,\;
+M_i
+\bigr)
+$$
+
+with:
+
+- $T_i$: temperature $[^\circ\mathrm{C}]$
+- $I_i$: impulse proxy (vertical buoyant motion) $[\mathrm{m\,s^{-1}}]$
+- $M_i$: mixing proxy (jet/shear intensity / initial motion) $[\mathrm{m\,s^{-1}}]$
+
+---
+
+---
+
+## 3. Mass Conservation
+
+### 3.1 Inflow
+
+Assuming constant total mass inside the Tank volume, the **mass continuity principle** applies:
+
+$$
+\Delta m_{\mathrm{in}} = \Delta m_{\mathrm{out}}
+$$
+
+The associated energy change due to the inflow is given by the transported **enthalpy difference**:
+
+$$
+\Delta E = \dot m\,\Delta h\,\Delta t
+$$
+
+with
+
+$$
+\Delta h = h(T_{\mathrm{in}}) - h(T_{\mathrm{out}})
+$$
+
+Inserted layers are initialized with:
+
+$$
+I = 0, \qquad M = v_{\mathrm{eff}}
+$$
+
+ensuring **no direct vertical momentum injection**.
+
+### 3.2 Outflow
+
+For extracted mass $\Delta m$:
+
+$$
+h_{out} =
+\frac{\sum_j \Delta m_j\,h(T_j)}
+     {\sum_j \Delta m_j}
+$$
+
+$$
+T_{out} = h^{-1}(h_{out})
+$$
+
+---
+
+## 4. Energy Conservation
+
+The total thermal energy of the water column is:
+
+$$
+E = \sum_i m_i\,h(T_i)
+$$
+
+Changes in $E$ arise from:
+
+- inflow and outflow enthalpy
+- heat losses to walls and ambient
+- internal heat conduction
+
+Internal mixing and inversion **redistribute** energy but do not create or
+destroy it. But useful Energy can be destroyed by mixing, of course.
+
+---
+
+## 5. Buoyancy Criterion
+
+A buoyancy instability exists when:
+
+$$
+\frac{\partial \rho}{\partial z} < 0
+$$
+
+In discrete form, an inversion between layers $i$ and $j$ is detected when:
+
+$$
+\rho(T_i) < \rho(T_j)
+\quad \text{for} \quad
+z_i < z_j
+$$
+
+---
+
+## 6. Impulse Generation
+
+Impulse is generated **only** from buoyancy work (and gravity).
+
+For a moving plug traversing a vertical distance $\Delta h$:
+
+$$
+I^2 =
+2g
+\left|
+\frac{\Delta \rho}{\rho}
+\right|
+\Delta h
+$$
+
+Impulse is therefore **emergent**, not prescribed.
+
+---
+
+## 7. Entrainment Model
+
+As a moving plug traverses a neighboring layer, an entrained volume:
+
+$$
+\Delta V_e = f_e\,\Delta h
+$$
+
+is incorporated into the plug, where $f_e$ is an empirical entrainment
+coefficient.
+
+---
+
+## 8. Impulse Dilution
+
+Entrainment increases plug mass and dilutes impulse:
+
+$$
+I_{\mathrm{new}}^2 =
+I_{\mathrm{old}}^2
+\left(
+1 - 2\ln\frac{m_{\mathrm{new}}}{m_{\mathrm{old}}}
+\right)
+$$
+
+---
+
+## 9. Mixing Proxy Dilution
+
+The mixing proxy decays with entrainment:
+
+$$
+M_{\mathrm{new}} =
+M_{\mathrm{old}}
+\frac{m_{\mathrm{old}}}{m_{\mathrm{new}}}
+$$
+
+---
+
+## 10. Horizontal Mixing Criterion
+
+Horizontal mixing occurs when kinetic energy associated with $M$
+exceeds buoyant resistance:
+
+$$
+\frac{1}{2}\rho M^2 >
+g\,\Delta \rho\,\Delta h
+$$
+
+Only layers with $M > 0$ participate.
+
+---
+
+## 11. Heat Conduction
+
+Heat conduction in the water column and foundation is governed by:
+
+$$
+\rho c_p
+\frac{\partial T}{\partial t}
+=
+\frac{\partial}{\partial z}
+\left(
+\lambda
+\frac{\partial T}{\partial z}
+\right)
+$$
+
+The equation is discretized implicitly and solved via TDMA.
+
+---
+
+## 12. Wall and Ambient Heat Losses
+
+Heat exchange with wall capacity nodes:
+
+$$
+\dot Q_{\mathrm{wall}} =
+\alpha A\,(T_{\mathrm{water}} - T_{\mathrm{wall}})
+$$
+
+Wall-to-ambient losses:
+
+$$
+\dot Q_{\mathrm{loss}} =
+U_{\mathrm{amb}}A\,(T_{\mathrm{wall}} - T_{\mathrm{amb}})
+$$
+
+Top of the wank is assumed to be constantly maintained steam cushion with a certain temperature. This gives the "losses" from the top, which is technically gains to the medium (system losses). Modelled as heat conduction with dirichlet boundary condition (T_DR)
+
+Losses to the ground are modelled with an empirically calculated heat flux q_Punkt_U 
+
+---
+
+## 13. Usable Energy and Mass
+
+Usable energy above a threshold temperature $T_{\mathrm{use}}$:
+
+$$
+E_{\mathrm{use}} =
+\sum_{i: T_i > T_{\mathrm{use}}}
+m_i\,
+\left[
+h(T_i) - h(T_{\mathrm{use}})
+\right]
+$$
+
+Usable mass:
+
+$$
+m_{\mathrm{use}} =
+\sum_{i: T_i > T_{\mathrm{use}}}
+m_i
+$$
+
+---
+
+## 14. Interpretation of Impulse–Mixing Variables
+
+- $I$: vertical plume velocity scale generated by buoyancy
+- $M$: initial inlet velocity
+
+They are transported with moving fluid structures and decay via entrainment.
